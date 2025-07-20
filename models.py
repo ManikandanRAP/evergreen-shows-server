@@ -92,6 +92,51 @@ class ShowPartner(BaseModel):
     show_id: Optional[str] = None
     partner_id: Optional[str] = None
 
+class ShowCreate(BaseModel):
+    title: str
+    minimum_guarantee: Optional[float] = None
+    annual_usd: Optional[dict] = None
+    subnetwork_id: Optional[str] = None
+    media_type: Optional[MediaType] = None
+    tentpole: bool = False
+    relationship_level: Optional[RelationshipLevel] = None
+    show_type: Optional[ShowType] = None
+    evergreen_ownership_pct: Optional[float] = None
+    has_sponsorship_revenue: Optional[bool] = None
+    has_non_evergreen_revenue: Optional[bool] = None
+    requires_partner_access: Optional[bool] = None
+    has_branded_revenue: Optional[bool] = None
+    has_marketing_revenue: Optional[bool] = None
+    has_web_mgmt_revenue: Optional[bool] = None
+    genre_id: Optional[str] = None
+    is_original: Optional[bool] = None
+    shows_per_year: Optional[int] = None
+    latest_cpm_usd: Optional[float] = None
+    ad_slots: Optional[int] = None
+    avg_show_length_mins: Optional[int] = None
+    start_date: Optional[date] = None
+    show_name_in_qbo: Optional[str] = None
+    side_bonus_percent: Optional[float] = None
+    youtube_ads_percent: Optional[float] = None
+    subscriptions_percent: Optional[float] = None
+    standard_ads_percent: Optional[float] = None
+    sponsorship_ad_fp_lead_percent: Optional[float] = None
+    sponsorship_ad_partner_lead_percent: Optional[float] = None
+    sponsorship_ad_partner_sold_percent: Optional[float] = None
+    programmatic_ads_span_percent: Optional[float] = None
+    merchandise_percent: Optional[float] = None
+    branded_revenue_percent: Optional[float] = None
+    marketing_services_revenue_percent: Optional[float] = None
+    direct_customer_hands_off_percent: Optional[float] = None
+    youtube_hands_off_percent: Optional[float] = None
+    subscription_hands_off_percent: Optional[float] = None
+    revenue_2023: Optional[float] = None
+    revenue_2024: Optional[float] = None
+    revenue_2025: Optional[float] = None
+    evergreen_production_staff_name: Optional[str] = None
+    show_host_contact: Optional[str] = None
+    show_primary_contact: Optional[str] = None
+
 class Show(BaseModel):
     id: str
     title: Optional[str] = None

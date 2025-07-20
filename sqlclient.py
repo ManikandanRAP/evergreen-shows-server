@@ -1,5 +1,6 @@
 import pymysql
 import os
+import json
 from auth import get_password_hash
 from contextlib import contextmanager
 from pydantic import BaseModel
@@ -149,3 +150,29 @@ class SqlClient:
         if error:
             return [], str(error)
         return podcasts, None
+
+    def create_podcast(self, show_data):
+        show_id = os.urandom(16).hex()
+        show_dict = show_data.dict()
+        show_dict['id'] = show_id
+
+        # Handle JSON serializable fields
+        if 'annual_usd' in show_dict and show_dict['annual_usd'] is not None:
+            show_dict['annual_usd'] = json.dumps(show_dict['annual_usd'])
+
+        columns = ', '.join([f'`{k}`' for k in show_dict.keys()])
+        placeholders = ', '.join(['%s'] * len(show_dict))
+        sql = f"INSERT INTO shows ({columns}) VALUES ({placeholders})"
+        values = tuple(show_dict.values())
+
+        _, _, error = self._execute_query(sql, values, is_transaction=True)
+        if error:
+            return None, error
+
+        # Fetch the newly created show to return it
+        fetch_sql = "SELECT * FROM shows WHERE id = %s"
+        new_show, _, fetch_error = self._execute_query(fetch_sql, (show_id,), fetch='one')
+        if fetch_error:
+            return None, fetch_error
+
+        return new_show, None
