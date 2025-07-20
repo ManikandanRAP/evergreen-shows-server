@@ -49,11 +49,31 @@ class SqlClient:
 
     def get_all_podcasts(self):
         sql = "SELECT * FROM shows"
-        podcasts, _, error = self._execute_query(sql, fetch='all')
+        shows, _, error = self._execute_query(sql, fetch='all')
         if error:
-            # This is an internal error, should be logged.
             return []
-        return podcasts
+        return shows
+
+    def filter_podcasts(self, filters: dict):
+        query = "SELECT * FROM shows"
+        where_clauses = []
+        values = []
+
+        for key, value in filters.items():
+            if value is not None:
+                # For boolean values, SQL expects 1 or 0
+                if isinstance(value, bool):
+                    value = 1 if value else 0
+                where_clauses.append(f"`{key}` = %s")
+                values.append(value)
+
+        if where_clauses:
+            query += " WHERE " + " AND ".join(where_clauses)
+
+        results, _, error = self._execute_query(query, tuple(values), fetch='all')
+        if error:
+            return None, error
+        return results, None
 
     def update_podcast(self, show_id: str, show_data: BaseModel):
         update_data = show_data.model_dump(exclude_unset=True)
