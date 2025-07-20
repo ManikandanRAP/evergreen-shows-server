@@ -1,6 +1,6 @@
 import pymysql
 import os
-import hashlib
+from auth import get_password_hash
 from contextlib import contextmanager
 from pydantic import BaseModel
 
@@ -83,7 +83,7 @@ class SqlClient:
         return True, None
 
     def update_password(self, user_id: str, new_password: str):
-        password_hash = hashlib.sha256(new_password.encode()).hexdigest()
+        password_hash = get_password_hash(new_password)
         sql = "UPDATE users SET password_hash = %s WHERE id = %s"
         _, rows_affected, error = self._execute_query(sql, (password_hash, user_id), is_transaction=True)
         if error:
@@ -92,17 +92,19 @@ class SqlClient:
             return False, f"User with id {user_id} not found"
         return True, None
 
-    def validate_user(self, email: str, password: str):
-        password_hash = hashlib.sha256(password.encode()).hexdigest()
-        sql = "SELECT * FROM users WHERE email = %s AND password_hash = %s"
-        user, _, error = self._execute_query(sql, (email, password_hash), fetch='one')
-        if error:
-            return None, str(error)
-        return user, None
+    def get_user_by_email(self, email: str):
+        sql = "SELECT * FROM users WHERE email = %s"
+        user, _, error = self._execute_query(sql, (email,), fetch='one')
+        return user, error
+
+    def get_user_by_id(self, user_id: str):
+        sql = "SELECT * FROM users WHERE id = %s"
+        user, _, error = self._execute_query(sql, (user_id,), fetch='one')
+        return user, error
 
     def create_partner(self, partner_data):
         user_id = os.urandom(16).hex()
-        password_hash = hashlib.sha256(partner_data.password.encode()).hexdigest()
+        password_hash = get_password_hash(partner_data.password)
         partner_id = os.urandom(16).hex()
 
         sql_user = "INSERT INTO users (id, name, email, password_hash, role) VALUES (%s, %s, %s, %s, 'partner')"

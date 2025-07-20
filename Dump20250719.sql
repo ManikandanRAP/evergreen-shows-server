@@ -299,6 +299,8 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
+/* password adminpassword */
+INSERT INTO `users` VALUES ('ed69fe69259228685fe7823467094b74','Admin User','admin@evergreen.com','$2b$12$f5drjCZDwHYi8f1avUidDOoAvzEPBToPlspf.3tXxtzYZQoJYvhVC','admin','2025-07-20 13:33:46');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

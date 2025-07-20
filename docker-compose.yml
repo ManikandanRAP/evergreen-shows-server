@@ -22,7 +22,7 @@ services:
       - db
     environment:
       - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=rootpassword
+      - DB_USER=user
+      - DB_PASSWORD=password
       - DB_NAME=evergreen
-      - ADMIN_API_KEY=admin-secret-key
+      - SECRET_KEY=a_very_secret_key_that_should_be_in_env_vars

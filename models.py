@@ -150,6 +150,26 @@ class User(BaseModel):
     role: Optional[Role] = None
     created_at: Optional[datetime] = None
 
+class ShowUpdate(BaseModel):
+    title: Optional[str] = None
+    minimum_guarantee: Optional[float] = None
+    # Add other fields from Show model that can be updated
+
+class PartnerCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+
+class PasswordUpdate(BaseModel):
+    password: str
+
 class UserLogin(BaseModel):
     email: str
     password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
