@@ -75,6 +75,30 @@ class SqlClient:
             return None, error
         return results, None
 
+    def delete_user(self, user_id: str):
+        # First, delete any associations this user has with shows to maintain referential integrity.
+        unassociate_sql = "DELETE FROM show_partners WHERE partner_id = %s"
+        self._execute_query(unassociate_sql, (user_id,), is_transaction=True)
+        # We don't check for errors here, as the user may not have any associations.
+
+        # Then, delete the user.
+        delete_sql = "DELETE FROM users WHERE id = %s"
+        rows_affected, _, error = self._execute_query(delete_sql, (user_id,), is_transaction=True)
+        if error:
+            return False, str(error)
+        if rows_affected == 0:
+            return False, "User not found"
+        return True, None
+
+    def unassociate_partner_from_show(self, show_id: str, partner_id: str):
+        sql = "DELETE FROM show_partners WHERE show_id = %s AND partner_id = %s"
+        rows_affected, _, error = self._execute_query(sql, (show_id, partner_id), is_transaction=True)
+        if error:
+            return False, str(error)
+        if rows_affected == 0:
+            return False, "Association not found"
+        return True, None
+
     def update_podcast(self, show_id: str, show_data: BaseModel):
         update_data = show_data.model_dump(exclude_unset=True)
         if not update_data:

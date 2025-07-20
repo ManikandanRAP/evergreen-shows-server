@@ -3,6 +3,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from pydantic import BaseModel
+from typing import Optional
 
 from models import Show, User, Token, TokenData, PartnerCreate, PasswordUpdate, ShowUpdate, ShowCreate, MediaType, RelationshipLevel, ShowType
 from sqlclient import SqlClient
@@ -161,6 +162,22 @@ def associate_partner_with_show(show_id: str, partner_id: str, admin: User = Dep
     if error:
         raise HTTPException(status_code=404, detail=error)
     return result
+
+@app.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(user_id: str, admin: User = Depends(get_admin_user)):
+    """(Admin Only) Delete a user and all their associations."""
+    client = SqlClient()
+    success, error = client.delete_user(user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail=error)
+
+@app.delete("/podcasts/{show_id}/partners/{partner_id}", status_code=status.HTTP_204_NO_CONTENT)
+def unassociate_partner_from_show(show_id: str, partner_id: str, admin: User = Depends(get_admin_user)):
+    """(Admin Only) Unassociate a partner from a show."""
+    client = SqlClient()
+    success, error = client.unassociate_partner_from_show(show_id, partner_id)
+    if not success:
+        raise HTTPException(status_code=404, detail=error)
 
 # --- Partner & Admin Endpoints ---
 
