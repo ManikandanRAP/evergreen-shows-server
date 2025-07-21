@@ -3,6 +3,6 @@ pymysql
 fastapi
 uvicorn[standard]
 python-jose[cryptography]
-passlib[bcrypt]==5.3.1
-requests==2.31.0
+passlib[bcrypt]
+requests
 python-multipart

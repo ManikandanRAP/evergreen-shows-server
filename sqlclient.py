@@ -54,6 +54,13 @@ class SqlClient:
             return []
         return shows
 
+    def get_podcast_by_id(self, show_id: str):
+        sql = "SELECT * FROM shows WHERE id = %s"
+        show, _, error = self._execute_query(sql, (show_id,), fetch='one')
+        if error:
+            return None, str(error)
+        return show, None
+
     def filter_podcasts(self, filters: dict):
         query = "SELECT * FROM shows"
         where_clauses = []
@@ -100,9 +107,12 @@ class SqlClient:
         return True, None
 
     def update_podcast(self, show_id: str, show_data: BaseModel):
-        update_data = show_data.model_dump(exclude_unset=True)
-        if not update_data:
+        # Pydantic's exclude_unset=True can be tricky. A more robust check is needed.
+        # We check if any of the fields in the model have been set by the client.
+        if not show_data.model_fields_set:
             return None, "No update data provided"
+        
+        update_data = show_data.model_dump(exclude_unset=True)
 
         set_clause = ", ".join([f"{key} = %s" for key in update_data.keys()])
         sql_update = f"UPDATE shows SET {set_clause} WHERE id = %s"

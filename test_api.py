@@ -38,7 +38,7 @@ def login(email, password):
 
 def main():
     admin_email = "admin@evergreen.com"
-    admin_password = "admin_password"
+    admin_password = "adminpassword"
     
     partner_email = "testpartner@example.com"
     partner_password = "partnerpass123"
@@ -49,14 +49,15 @@ def main():
 
     try:
         # 1. Admin Login
-        run_test("Admin Login", login, admin_email, admin_password)
+        print("\n--- Admin Login ---")
+        login(admin_email, admin_password)
 
         # 2. Create Podcast (Admin)
         podcast_data = {
             "title": "The Test Chamber",
-            "media_type": "Podcast",
+            "media_type": "audio",
             "show_type": "Original",
-            "relationship_level": "Key Partner",
+            "relationship_level": "strong",
         }
         created_podcast = run_test("Create Podcast", session.post, f"{BASE_URL}/podcasts", json=podcast_data)
         created_podcast_id = created_podcast['id']
@@ -97,19 +98,32 @@ def main():
         print("\n--- Starting Cleanup --- ")
         # Re-login as admin to perform cleanup
         try:
-            run_test("Admin Re-Login for Cleanup", login, admin_email, admin_password)
+            print("\n--- Admin Re-Login for Cleanup ---")
+            login(admin_email, admin_password)
             
             if created_podcast_id and created_partner_id:
                 run_test("Unassociate Partner from Show", session.delete, f"{BASE_URL}/podcasts/{created_podcast_id}/partners/{created_partner_id}")
             
             if created_podcast_id:
+                deleted_podcast_data = run_test("Fetch Deleted Podcast Data", session.get, f"{BASE_URL}/podcasts/{created_podcast_id}")
                 run_test("Delete Podcast", session.delete, f"{BASE_URL}/podcasts/{created_podcast_id}")
+                # Recreate the podcast to leave the DB in a consistent state
+                recreate_data = {
+                    "title": deleted_podcast_data.get("title"),
+                    "media_type": deleted_podcast_data.get("media_type"),
+                    "show_type": deleted_podcast_data.get("show_type"),
+                    "relationship_level": deleted_podcast_data.get("relationship_level"),
+                    "tentpole": deleted_podcast_data.get("tentpole"),
+                }
+                run_test("Recreate Deleted Podcast", session.post, f"{BASE_URL}/podcasts", json=recreate_data)
             
             if created_partner_id:
                 run_test("Delete Partner", session.delete, f"{BASE_URL}/users/{created_partner_id}")
 
             print("\nCleanup complete.")
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             print(f"An error occurred during cleanup: {e}")
             print("Manual cleanup may be required for the following resources:")
             print(f"- Podcast ID: {created_podcast_id}")

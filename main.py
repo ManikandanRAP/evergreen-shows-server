@@ -4,16 +4,31 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from pydantic import BaseModel
 from typing import Optional
-
 from models import Show, User, Token, TokenData, PartnerCreate, PasswordUpdate, ShowUpdate, ShowCreate, MediaType, RelationshipLevel, ShowType
 from sqlclient import SqlClient
 from auth import create_access_token, verify_password, SECRET_KEY, ALGORITHM
+from fastapi.middleware.cors import CORSMiddleware
 
 # --- FastAPI App Initialization ---
 app = FastAPI(
     title="Evergreen Podcasts API",
     description="API for managing podcasts and partners with JWT authentication.",
     version="2.0.0"
+)
+
+# origins = [
+#     "http://localhost.tiangolo.com",
+#     "https://localhost.tiangolo.com",
+#     "http://localhost",
+#     "http://localhost:8080",
+# ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -125,11 +140,22 @@ def filter_podcasts(
         raise HTTPException(status_code=400, detail=str(error))
     return podcasts
 
+@app.get("/podcasts/{show_id}", response_model=Show)
+def get_podcast(show_id: str, admin: User = Depends(get_admin_user)):
+    client = SqlClient()
+    show, error = client.get_podcast_by_id(show_id)
+    if error or not show:
+        raise HTTPException(status_code=404, detail="Podcast not found")
+    return show
+
+
 @app.put("/podcasts/{show_id}", response_model=Show)
 def update_podcast(show_id: str, show_data: ShowUpdate, admin: User = Depends(get_admin_user)):
     client = SqlClient()
     updated_show, error = client.update_podcast(show_id, show_data)
     if error:
+        if "No update data provided" in error:
+            raise HTTPException(status_code=400, detail=error)
         raise HTTPException(status_code=404, detail=error)
     return updated_show
 
