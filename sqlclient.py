@@ -4,12 +4,18 @@ import json
 from auth import get_password_hash
 from contextlib import contextmanager
 from pydantic import BaseModel
+from fastapi import Request
+from fastapi.exceptions import RequestValidationError
 
 # --- Configuration ---
 DB_HOST = os.environ.get("DB_HOST", "127.0.0.1")
 DB_USER = os.environ.get("DB_USER", "root")
 DB_PASSWORD = os.environ.get("DB_PASSWORD", "rootpassword")
 DB_NAME = os.environ.get("DB_NAME", "evergreen")
+
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print("Validation error:", exc.errors())
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
 
 @contextmanager
 def get_db_connection():
@@ -129,6 +135,14 @@ class SqlClient:
         return updated_show, str(error) if error else None
 
     def delete_podcast(self, show_id: str):
+        sql = "DELETE FROM demographic WHERE show_id = %s"
+        _, rows_affected, error = self._execute_query(sql, (show_id,), is_transaction=True)
+        if error:
+            return False, str(error)
+        if rows_affected == 0:
+            return False, f"Podcast with id {show_id} not found"
+
+        
         sql = "DELETE FROM shows WHERE id = %s"
         _, rows_affected, error = self._execute_query(sql, (show_id,), is_transaction=True)
         if error:
@@ -206,27 +220,34 @@ class SqlClient:
         return podcasts, None
 
     def create_podcast(self, show_data):
-        show_id = os.urandom(16).hex()
-        show_dict = show_data.dict()
-        show_dict['id'] = show_id
+        try:
+            print('in create function')
+            # show_id = os.urandom(16).hex()
+            # show_dict = show_data.dict()
+            # show_dict['id'] = show_id
 
-        # Handle JSON serializable fields
-        if 'annual_usd' in show_dict and show_dict['annual_usd'] is not None:
-            show_dict['annual_usd'] = json.dumps(show_dict['annual_usd'])
+            # # Handle JSON serializable fields
+            # if 'annual_usd' in show_dict and show_dict['annual_usd'] is not None:
+            #     show_dict['annual_usd'] = json.dumps(show_dict['annual_usd'])
 
-        columns = ', '.join([f'`{k}`' for k in show_dict.keys()])
-        placeholders = ', '.join(['%s'] * len(show_dict))
-        sql = f"INSERT INTO shows ({columns}) VALUES ({placeholders})"
-        values = tuple(show_dict.values())
+            # columns = ', '.join([f'`{k}`' for k in show_dict.keys()])
+            # placeholders = ', '.join(['%s'] * len(show_dict))
+            # sql = f"INSERT INTO shows ({columns}) VALUES ({placeholders})"
+            sql=f"INSERT INTO shows (id) VALUES (1101)"
+            # values = tuple(show_dict.values())
+            print(sql)
+            _, _, error = self._execute_query(sql, is_transaction=True)
 
-        _, _, error = self._execute_query(sql, values, is_transaction=True)
-        if error:
-            return None, error
+            # _, _, error = self._execute_query(sql, values, is_transaction=True)
+            if error:
+                return None, error
+            show_id = '1101'
+            # Fetch the newly created show to return it
+            fetch_sql = "SELECT * FROM shows WHERE id = %s"
+            new_show, _, fetch_error = self._execute_query(fetch_sql, (show_id,), fetch='one')
+            if fetch_error:
+                return None, fetch_error
 
-        # Fetch the newly created show to return it
-        fetch_sql = "SELECT * FROM shows WHERE id = %s"
-        new_show, _, fetch_error = self._execute_query(fetch_sql, (show_id,), fetch='one')
-        if fetch_error:
-            return None, fetch_error
-
-        return new_show, None
+            return new_show, None
+        except Exception as e:
+            print(e)
