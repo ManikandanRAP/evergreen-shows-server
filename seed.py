@@ -1,17 +1,35 @@
 import os
 import pymysql
+from passlib.context import CryptContext
 from auth import get_password_hash
+
+# from auth import get_password_hash
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# def get_password_hash(password: str) -> str:
+#     return pwd_context.hash(password)
+
 
 def create_admin_user():
     """Creates an admin user in the database if one does not already exist."""
     try:
+        # conn = pymysql.connect(
+        #     host=os.environ.get("DB_HOST", "0.0.0.0"),
+        #     user=os.environ.get("DB_USER", "user"),
+        #     password=os.environ.get("DB_PASSWORD", "password"),
+        #     db=os.environ.get("DB_NAME", "evergreen"),
+        #     cursorclass=pymysql.cursors.DictCursor
+        # )
         conn = pymysql.connect(
-            host=os.environ.get("DB_HOST", "0.0.0.0"),
-            user=os.environ.get("DB_USER", "user"),
-            password=os.environ.get("DB_PASSWORD", "password"),
-            db=os.environ.get("DB_NAME", "evergreen"),
-            cursorclass=pymysql.cursors.DictCursor
-        )
+        host="localhost",
+        port=3306,
+        user="root",
+        password="rootpassword",
+        db="evergreen",
+        cursorclass=pymysql.cursors.DictCursor
+    )
+
+        
 
         with conn.cursor() as cursor:
             # Check if admin user already exists
@@ -19,7 +37,7 @@ def create_admin_user():
             cursor.execute(sql_check, ('admin@evergreen.com',))
             result = cursor.fetchone()
 
-            if result:
+            if False:
                 print("Admin user already exists.")
             else:
                 # Create new admin user

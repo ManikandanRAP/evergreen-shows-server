@@ -135,12 +135,12 @@ class SqlClient:
         return updated_show, str(error) if error else None
 
     def delete_podcast(self, show_id: str):
-        sql = "DELETE FROM demographic WHERE show_id = %s"
-        _, rows_affected, error = self._execute_query(sql, (show_id,), is_transaction=True)
-        if error:
-            return False, str(error)
-        if rows_affected == 0:
-            return False, f"Podcast with id {show_id} not found"
+        # sql = "DELETE FROM demographic WHERE show_id = %s"
+        # _, rows_affected, error = self._execute_query(sql, (show_id,), is_transaction=True)
+        # if error:
+        #     return False, str(error)
+        # if rows_affected == 0:
+        #     return False, f"Podcast with id {show_id} not found"
 
         
         sql = "DELETE FROM shows WHERE id = %s"
@@ -222,23 +222,51 @@ class SqlClient:
     def create_podcast(self, show_data):
         try:
             print('in create function')
-            # show_id = os.urandom(16).hex()
-            # show_dict = show_data.dict()
-            # show_dict['id'] = show_id
+            print(show_data)
+            # show_data.pop("annual_usd", None)
+            # keys = ["id","title","show_type","subnetwork_name","media_type"]
 
-            # # Handle JSON serializable fields
-            # if 'annual_usd' in show_dict and show_dict['annual_usd'] is not None:
-            #     show_dict['annual_usd'] = json.dumps(show_dict['annual_usd'])
+            # keys = [
+            # "id", "title", "minimum_guarantee", "media_type", "tentpole", "relationship_level", "show_type",
+            # "evergreen_ownership_pct", "has_sponsorship_revenue", "has_non_evergreen_revenue", "requires_partner_access",
+            # "has_branded_revenue", "has_marketing_revenue", "has_web_mgmt_revenue", "genre_id", "is_original",
+            # "shows_per_year", "latest_cpm_usd", "ad_slots", "avg_show_length_mins", "start_date", "show_name_in_qbo",
+            # "side_bonus_percent", "youtube_ads_percent", "subscriptions_percent", "standard_ads_percent",
+            # "sponsorship_ad_fp_lead_percent", "sponsorship_ad_partner_lead_percent", "sponsorship_ad_partner_sold_percent",
+            # "programmatic_ads_span_percent", "merchandise_percent", "branded_revenue_percent",
+            # "marketing_services_revenue_percent", "direct_customer_hands_off_percent", "youtube_hands_off_percent",
+            # "subscription_hands_off_percent", "revenue_2023", "revenue_2024", "revenue_2025",
+            # "evergreen_production_staff_name", "show_host_contact", "show_primary_contact", "age_range", "gender",
+            # "region", "primary_education", "secondary_education", "genre_name", "subnetwork_name"
+            # ]
+
+
+
+            # show_dict = {key: None for key in keys}
 
             # columns = ', '.join([f'`{k}`' for k in show_dict.keys()])
-            # placeholders = ', '.join(['%s'] * len(show_dict))
-            # sql = f"INSERT INTO shows ({columns}) VALUES ({placeholders})"
-            sql=f"INSERT INTO shows (id) VALUES (1101)"
-            # values = tuple(show_dict.values())
-            print(sql)
-            _, _, error = self._execute_query(sql, is_transaction=True)
+            # print(columns)
 
-            # _, _, error = self._execute_query(sql, values, is_transaction=True)
+            show_id = os.urandom(16).hex()
+            show_dict = show_data.dict()
+            show_dict['id'] = show_id
+            show_dict.pop("annual_usd", None)
+            
+            show_dict.pop("subnetwork_id", None)
+
+            # Handle JSON serializable fields
+            if 'annual_usd' in show_dict and show_dict['annual_usd'] is not None:
+                show_dict['annual_usd'] = json.dumps(show_dict['annual_usd'])
+
+            columns = ', '.join([f'`{k}`' for k in show_dict.keys()])
+            placeholders = ', '.join(['%s'] * len(show_dict))
+            sql = f"INSERT INTO shows ({columns}) VALUES ({placeholders})"
+            # sql=f"INSERT INTO shows (id,title) VALUES (1101,'test')"
+            values = tuple(show_dict.values())
+            print(sql)
+            # _, _, error = self._execute_query(sql, is_transaction=True)
+
+            _, _, error = self._execute_query(sql, values, is_transaction=True)
             if error:
                 return None, error
             show_id = '1101'
